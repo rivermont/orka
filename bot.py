@@ -10,16 +10,7 @@ Copyright (c) 2017 William Bennett
 import discord
 import random
 import markovify
-
-
-#########
-# SETUP #
-#########
-
-
-client = discord.Client()
-
-read = []
+import asyncio
 
 
 ###################
@@ -117,102 +108,115 @@ def make_markov_model(channel):
 # RUN #
 #######
 
+class Orka(discord.Client):
 
-@client.event
-async def on_ready():
-	print('Logging in...')
-	print('Logged in as {0}; ID #{1}'.format(client.user.name, client.user.id))
-	print('Setting status...')
-	await client.change_presence(game=discord.Game(name='https://github.com/rivermont/orka'))
-	print('Gathering available text channels...')
-	for server in client.servers:
-		for channel in server.channels:
-			if channel.type == discord.ChannelType.text:
-				if channel.permissions_for(server.me).read_messages:
-					print('Read access in: ' + server.name + '/' + channel.name)
-					read.append(channel)
-	print('Downloading logs from readable text channels...')
-	for channel in read:
-		async for m in client.logs_from(channel):
-			add_msg(channel, m.content)
+	@asyncio.coroutine
+	async def on_ready(self):
+		print('Logging in...')
+		print('Logged in as {0}; ID #{1}'.format(client.user.name, client.user.id))
+		print('Setting status...')
+		await client.change_presence(game=discord.Game(name='https://github.com/rivermont/orka'))
+		print('Gathering available text channels...')
+		for server in client.servers:
+			for channel in server.channels:
+				if channel.type == discord.ChannelType.text:
+					if channel.permissions_for(server.me).read_messages:
+						print('Read access in: ' + server.name + '/' + channel.name)
+						read.append(channel)
+		print('Downloading logs from readable text channels...')
+		for channel in read:
+			async for m in client.logs_from(channel):
+				add_msg(channel, m.content)
+
+	@asyncio.coroutine
+	async def on_member_join(self, member):
+		pass
+
+	@asyncio.coroutine
+	async def on_message(self, message):
+		print('Received message..')
+		content = message.content
+		channel = message.channel
+		add_msg(channel, content)
+
+		# General commands
+
+		if message.content.startswith('!flip'):
+			# Flips a coin on two choices. Defaults to Heads or Tails.
+			print('Flipping coin...')
+			if len(content.split()) == 1:
+				choice_ = random.choice(['Heads', 'Tails'])
+				await client.send_message(channel, choice_)
+			elif len(content.split()) == 2:
+				await client.send_message(channel, 'Only one option supplied. Must be two or none.')
+			elif len(content.split()) == 3:
+				options = content.split()[1:]
+				flip = random.choice(options)
+				await client.send_message(channel, flip)
+			elif len(content.split()) > 3:
+				await client.send_message(channel, 'Too many options supplied. Must be two or none.')
+
+		elif content.startswith('!roll'):
+			# Rolls a dice. Defaults to a d6.
+			print('Rolling die...')
+			if len(content.split()) == 1:
+				roll = random.randint(1, 6)
+				await client.send_message(channel, 'You rolled a {0}.'.format(roll))
+			if len(content.split()) == 2:
+				input_ = content.split()[1]
+				roll = random.randint(1, int(input_))
+				await client.send_message(channel, 'You rolled a {0}.'.format(roll))
+
+		elif content.startswith('!convert'):
+			# Converts Kelvin/Celsius/Fahrenheit
+			input_ = content.split()
+			try:
+				amount = int(input_[1][:-1])
+				unit_from = input_[1][-1]
+				unit_to = input_[2]
+				result = convert(amount, unit_from, unit_to)
+				if result == "Error":
+					raise IndexError
+				else:
+					await client.send_message(channel, 'Converted {0}{1} to {2}{3}.'.format(amount, unit_from, result, unit_to))
+			except IndexError:
+				print('Invalid input.')
+				await client.send_message(channel, 'Invalid input. Must be in format `!convert 23U U`.')
+
+		# Moderation commands
+
+		elif content.startswith('@logs'):
+			async for m in client.logs_from(channel):
+				add_msg(channel, m.content)
+
+		elif content.startswith('@generate'):
+			print('Generating markov model for channel {0}'.format(channel))
+			make_markov_model(channel)
+			await client.send_message(channel, 'Successfully generated markov model.')
+
+		elif content.startswith('!sentence'):
+			# Generates a single line from the current markov model
+			# Under moderation b/c that's where @generate is
+			sentence = ''
+			try:
+				sentence = model.make_sentence(tries=500)
+			except NameError:
+				print('No available markov model.')
+				await client.send_message(channel, 'No available markov model.')
+			try:
+				await client.send_message(channel, sentence)
+			except discord.errors.HTTPException as e:
+				if '(status code: 400)' in str(e):
+					print('Failed to create sentence.')
 
 
-@client.event
-async def on_message(message):
-	print('Received message..')
-	content = message.content
-	channel = message.channel
-	add_msg(channel, content)
+#########
+# SETUP #
+#########
 
-	# General commands
+client = Orka()
 
-	if message.content.startswith('!flip'):
-		# Flips a coin on two choices. Defaults to Heads or Tails.
-		print('Flipping coin...')
-		if len(content.split()) == 1:
-			choice_ = random.choice(['Heads', 'Tails'])
-			await client.send_message(channel, choice_)
-		elif len(content.split()) == 2:
-			await client.send_message(channel, 'Only one option supplied. Must be two or none.')
-		elif len(content.split()) == 3:
-			options = content.split()[1:]
-			flip = random.choice(options)
-			await client.send_message(channel, flip)
-		elif len(content.split()) > 3:
-			await client.send_message(channel, 'Too many options supplied. Must be two or none.')
-
-	elif content.startswith('!roll'):
-		# Rolls a dice. Defaults to a d6.
-		print('Rolling die...')
-		if len(content.split()) == 1:
-			roll = random.randint(1, 6)
-			await client.send_message(channel, 'You rolled a {0}.'.format(roll))
-		if len(content.split()) == 2:
-			input_ = content.split()[1]
-			roll = random.randint(1, int(input_))
-			await client.send_message(channel, 'You rolled a {0}.'.format(roll))
-
-	elif content.startswith('!convert'):
-		# Converts Kelvin/Celsius/Fahrenheit
-		input_ = content.split()
-		try:
-			amount = int(input_[1][:-1])
-			unit_from = input_[1][-1]
-			unit_to = input_[2]
-			result = convert(amount, unit_from, unit_to)
-			if result == "Error":
-				raise IndexError
-			else:
-				await client.send_message(channel, 'Converted {0}{1} to {2}{3}.'.format(amount, unit_from, result, unit_to))
-		except IndexError:
-			print('Invalid input.')
-			await client.send_message(channel, 'Invalid input. Must be in format `!convert 23F K`.')
-
-	# Moderation commands
-
-	elif content.startswith('@logs'):
-		async for m in client.logs_from(channel):
-			add_msg(channel, m.content)
-
-	elif content.startswith('@generate'):
-		print('Generating markov model for channel {0}'.format(channel))
-		make_markov_model(channel)
-		await client.send_message(channel, 'Successfully generated markov model.')
-
-	elif content.startswith('!sentence'):
-		# Generates a single line from the current markov model
-		# Under moderation b/c that's where @generate is
-		sentence = ''
-		try:
-			sentence = model.make_sentence(tries=500)
-		except NameError:
-			print('No available markov model.')
-			await client.send_message(channel, 'No available markov model.')
-		try:
-			await client.send_message(channel, sentence)
-		except discord.errors.HTTPException as e:
-			if '(status code: 400)' in str(e):
-				print('Failed to create sentence.')
+read = []
 
 
 if __name__ == '__main__':
