@@ -14,11 +14,8 @@ def add_msg(channel, text):
 	"""
 	Appends a message to the end of a file.
 	"""
-	try:
-		with open('channels/{0}.txt'.format(channel), 'a+') as file:
-			file.write('{0}\n'.format(text))
-	except UnicodeEncodeError:
-		print('Unknown character in message.')
+	with open('channels/{0}.txt'.format(channel), 'a+', encoding="utf_8") as file:
+		file.write('{0}\n'.format(text))
 
 @client.event
 async def on_ready():
@@ -52,6 +49,8 @@ async def on_message(message):
 			input_ = content.split()[1]
 			roll = random.randint(1, int(input_))
 			await client.send_message(message.channel, 'You rolled a {0}.'.format(roll))
+	elif content.startswith('!sentence'):
+		pass
 
 if __name__ == '__main__':
 	print('Logging in...')
