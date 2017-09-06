@@ -10,7 +10,6 @@ Copyright (c) 2017 William Bennett
 import discord
 import random
 import markovify
-import asyncio
 
 
 ###################
@@ -90,11 +89,11 @@ def k_to_f(temp):
 ###################
 
 
-def add_msg(channel, text):
+def add_msg(channel, text, mode='a+'):
 	"""
 	Appends a message to the end of a file.
 	"""
-	with open('channels/{0}.txt'.format(channel), 'a+', encoding="utf_8") as file:
+	with open('channels/{0}.txt'.format(channel), '{0}'.format(mode), encoding="utf_8") as file:
 		file.write('{0}\n'.format(text))
 
 
@@ -105,12 +104,14 @@ def make_markov_model(channel):
 
 
 #######
-# RUN #
+# BOT #
 #######
 
 class Orka(discord.Client):
 
-	@asyncio.coroutine
+	river = self.get_server(256600580837998592)
+	general = river.get_channel(256600580837998592)
+
 	async def on_ready(self):
 		print('Logging in...')
 		print('Logged in as {0}; ID #{1}'.format(client.user.name, client.user.id))
@@ -125,14 +126,14 @@ class Orka(discord.Client):
 						read.append(channel)
 		print('Downloading logs from readable text channels...')
 		for channel in read:
-			async for m in client.logs_from(channel):
-				add_msg(channel, m.content)
+			async for message in client.logs_from(channel, limit=1000):
+				add_msg(channel, message.content, mode='w+')
+		print('Ready.')
 
-	@asyncio.coroutine
 	async def on_member_join(self, member):
-		pass
+		general = client.get_server(256600580837998592).get_channel(256600580837998592)
+		await client.send_message(general, 'Welcome, @{0}!'.format(member.name))
 
-	@asyncio.coroutine
 	async def on_message(self, message):
 		print('Received message..')
 		content = message.content
@@ -209,10 +210,18 @@ class Orka(discord.Client):
 				if '(status code: 400)' in str(e):
 					print('Failed to create sentence.')
 
+		elif content.startswith('@save'):
+			with open('model.json', 'w+') as f:
+				f.write(model.to_json())
 
-#########
-# SETUP #
-#########
+		elif content.startswith('@test'):
+			# Generic testing function
+			pass
+
+
+#######
+# RUN #
+#######
 
 client = Orka()
 
