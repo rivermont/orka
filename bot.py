@@ -109,9 +109,6 @@ def make_markov_model(channel):
 
 class Orka(discord.Client):
 
-	river = self.get_server(256600580837998592)
-	general = river.get_channel(256600580837998592)
-
 	async def on_ready(self):
 		print('Logging in...')
 		print('Logged in as {0}; ID #{1}'.format(client.user.name, client.user.id))
@@ -131,8 +128,11 @@ class Orka(discord.Client):
 		print('Ready.')
 
 	async def on_member_join(self, member):
-		general = client.get_server(256600580837998592).get_channel(256600580837998592)
-		await client.send_message(general, 'Welcome, @{0}!'.format(member.name))
+		general = self.get_server("256600580837998592").get_channel("256600580837998592")
+		await client.send_message(
+			general,
+			'Welcome, @{0}! Please familiarize yourself with our #rules, then go wild!'.format(member.name)
+		)
 
 	async def on_message(self, message):
 		print('Received message..')
