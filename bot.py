@@ -123,8 +123,9 @@ class Orka(discord.Client):
 						read.append(channel)
 		print('Downloading logs from readable text channels...')
 		for channel in read:
+			add_msg(channel, '', mode='w+')
 			async for message in client.logs_from(channel, limit=1000):
-				add_msg(channel, message.content, mode='w+')
+				add_msg(channel, message.content, mode='a')
 		print('Ready.')
 
 	async def on_member_join(self, member):
@@ -198,7 +199,6 @@ class Orka(discord.Client):
 		elif content.startswith('!sentence'):
 			# Generates a single line from the current markov model
 			# Under moderation b/c that's where @generate is
-			sentence = ''
 			try:
 				sentence = model.make_sentence(tries=500)
 			except NameError:
@@ -208,7 +208,8 @@ class Orka(discord.Client):
 				await client.send_message(channel, sentence)
 			except discord.errors.HTTPException as e:
 				if '(status code: 400)' in str(e):
-					print('Failed to create sentence.')
+					raise
+					# print('Failed to create sentence.')
 
 		elif content.startswith('@save'):
 			with open('model.json', 'w+') as f:
