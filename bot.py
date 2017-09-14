@@ -187,6 +187,10 @@ class Orka(discord.Client):
 
 		# Moderation commands
 
+		elif content.startswith('@stop'):
+			print('Stopping bot...')
+			await client.logout()
+
 		elif content.startswith('@logs'):
 			async for m in client.logs_from(channel):
 				add_msg(channel, m.content)
@@ -204,12 +208,10 @@ class Orka(discord.Client):
 			except NameError:
 				print('No available markov model.')
 				await client.send_message(channel, 'No available markov model.')
-			try:
+			if not bool(sentence):
+				await client.send_message(channel, 'No sentence generated.')
+			else:
 				await client.send_message(channel, sentence)
-			except discord.errors.HTTPException as e:
-				if '(status code: 400)' in str(e):
-					raise
-					# print('Failed to create sentence.')
 
 		elif content.startswith('@save'):
 			with open('model.json', 'w+') as f:
