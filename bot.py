@@ -10,6 +10,7 @@ Copyright (c) 2017 William Bennett
 import discord
 import random
 import markovify
+from os import path, makedirs
 
 
 ###################
@@ -203,8 +204,9 @@ class Orka(discord.Client):
 		elif content.startswith('!sentence'):
 			# Generates a single line from the current markov model
 			# Under moderation b/c that's where @generate is
+			sentence = ''
 			try:
-				sentence = model.make_sentence(tries=500)
+				sentence = model.make_sentence(tries=1000)
 			except NameError:
 				print('No available markov model.')
 				await client.send_message(channel, 'No available markov model.')
@@ -217,9 +219,9 @@ class Orka(discord.Client):
 			with open('model.json', 'w+') as f:
 				f.write(model.to_json())
 
-		elif content.startswith('@test'):
-			# Generic testing function
-			pass
+		# elif content.startswith('@test'):
+		# 	# Generic testing function
+		# 	pass
 
 
 #######
@@ -232,4 +234,7 @@ read = []
 
 
 if __name__ == '__main__':
+	if not path.exists('channels\\'):
+		makedirs('channels\\')
+
 	client.run('Mjg2NTgzNjI3NzkyNTE1MDgz.C5i1bw.Wyh56h4hWkeg8kdS1p0sC73to7A')
