@@ -143,7 +143,6 @@ class Orka(discord.Client):
 		add_msg(channel, content)
 
 		# General commands
-
 		if message.content.startswith('!flip'):
 			# Flips a coin on two choices. Defaults to Heads or Tails.
 			print('Flipping coin...')
@@ -187,7 +186,6 @@ class Orka(discord.Client):
 				await client.send_message(channel, 'Invalid input. Must be in format `!convert 23U U`.')
 
 		# Moderation commands
-
 		elif content.startswith('@stop'):
 			print('Stopping bot...')
 			await client.logout()
