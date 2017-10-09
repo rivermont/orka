@@ -14,6 +14,9 @@ python:
 install:
   - pip install -r requirements.txt
 
+script:
+  - python3 tests.py
+
 branches:
   only:
     - master
