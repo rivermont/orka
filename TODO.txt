@@ -1,0 +1,11 @@
+Slowly phasing out @Tatsumaki bot
+
+Pretty join messages; #welcome channel; Set to Unknown on join
+Reminders
+YouTube playlist music
+mp3 link playing
+Server log files
+AFK: Message bot to set status, bot sends message when someone @mentions you
+Whois user lookup
+!invite - Spits out approved server invite
+Channel massage purging
